@@ -1,6 +1,7 @@
 # V8::MonoContext
 
 XS perl binding for V8 MonoContext library
+
 Commonly intended for rendering 'fest' templates
 
 # INSTALLATION
@@ -17,7 +18,7 @@ To install this perl module type the following:
 
 # DEPENDENCIES FOR PERL MODULE
 
-This module requires these other modules and libraries:
+Module requires these other modules and libraries:
 
     perl >5.10.1
     perl ExtUtils-Embed
