@@ -7,8 +7,10 @@ extern "C" {
 #include "ppport.h"
 }
 
-typedef struct monocfg MonoContext;
+#undef dNOOP
+#define dNOOP extern int __attribute__ ((unused)) Perl___notused
 
+typedef struct monocfg MonoContext;
 
 MODULE = V8::MonoContext		PACKAGE = V8::MonoContext	PREFIX = mono_
 PROTOTYPES: ENABLE
@@ -222,5 +224,5 @@ mono_low_memory_notification(pMono)
 		MonoContext * pMono
 
 	CODE:
-		LowMemoryNotification;
+		LowMemoryNotification();
 
