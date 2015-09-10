@@ -16,7 +16,7 @@ WriteMakefile(
        AUTHOR         => 'fsitedev <fsite.dev@gmail.com>') : ()),
     LIBS              => ['-lv8monoctx.' . $ENV{V8_VERSION}],
     DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
-    INC               => "-I. -I$ENV{V8_PREFIX}/include -I/usr/local/include",
+    INC               => "-I. -I$ENV{V8_PREFIX}/include",
     CC                => $CC,
     LD                => $CC,
 	XSOPT             => '-C++ -hiertype',
