@@ -25,7 +25,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '3.01';
+our $VERSION = '3.02';
 
 require XSLoader;
 XSLoader::load('V8::MonoContext', $VERSION);

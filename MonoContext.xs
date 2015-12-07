@@ -121,7 +121,6 @@ mono_execute_file(pMono, fname, out, ...)
 		HV * opt_hash;
 		SV** append_val = NULL;
 		SV** json_val = NULL;
-		SV** run_val = NULL;
 	INIT:
 		if (!SvROK(out) || SvTYPE(out) >= SVt_PVAV) {
 			croak("expected STRING ref");
@@ -137,9 +136,6 @@ mono_execute_file(pMono, fname, out, ...)
 
 				json_val = hv_fetch(opt_hash, "json", strlen("json"), 0);
 				if (json_val != NULL && SvROK(*json_val)) croak ("'json' value must be a scalar");
-
-				run_val = hv_fetch(opt_hash, "run", strlen("run"), 0);
-				if (run_val != NULL && SvROK(*run_val)) croak ("'run' value must be a scalar");
 			}
 		}
 		else if (items > 4) {
@@ -150,7 +146,6 @@ mono_execute_file(pMono, fname, out, ...)
 		std::string _out;
 		std::string _fname(fname);
 		std::string _append("");
-		std::string _run;
 		std::string _json("{}");
 
 		if (append_val != NULL) {
@@ -161,11 +156,7 @@ mono_execute_file(pMono, fname, out, ...)
 			_json.assign(SvPV_nolen(*json_val));
 		}
 
-		if (run_val != NULL) {
-			_run.assign(SvPV_nolen(*run_val));
-		}
-
-		bool res = ExecuteFile(pMono, _fname, _append, _run, &_json, &_out);
+		bool res = ExecuteFile(pMono, _fname, _append, &_json, &_out);
 		std::vector<std::string> _err = GetErrors();
 
 		for (unsigned i=0; i < _err.size(); i++) {
@@ -190,10 +181,8 @@ mono_load_file(pMono, fname)
 
 	CODE:
 		std::string _fname(fname);
-		std::string _append("");
-		std::string _command;
 
-		bool res = ExecuteFile(pMono, _fname, _append, _command, NULL, NULL);
+		bool res = LoadFile(pMono, _fname);
 
 		std::vector<std::string> _err = GetErrors();
 

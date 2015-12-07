@@ -6,7 +6,7 @@ use FindBin;
 use Encode qw/decode/;
 use Data::Dumper;
 
-use Test::More tests => 22;
+use Test::More tests => 18;
 BEGIN { use_ok('V8::MonoContext') };
 
 my $out;
@@ -19,7 +19,7 @@ open FH, $json_file or die;
 	{local $\ = undef; $json = <FH>};
 close FH;
 
-my $obj = V8::MonoContext->new({run_low_memory_notification => 2, run_idle_notification_loop => 7, watch_templates => 1, cmd_args => '--max-old-space-size=128'});
+my $obj = V8::MonoContext->new({run_low_memory_notification => 2, run_idle_notification_loop => 6, watch_templates => 1, cmd_args => '--max-old-space-size=128'});
 
 my $sum_stat;
 my $last_stat;
@@ -65,6 +65,8 @@ ok !$obj->counters->{run_low_memory_notification_time}, 'Check empty gc time';
 
 ok $obj->execute_file($tt_file, \$out), print_stat('Execute file with no append not json');
 ok !$out, 'Check empty output';
+
+ok $obj->execute_file($tt_file, \$out), print_stat('Execute file with no append not json again');
 ok $obj->counters->{run_low_memory_notification_time} > 0, 'Check not empty gc time';
 
 ok $obj->execute_file($tt_file, \$out, {append => ';fest["top.xml"]( JSON.parse(__dataFetch()) );'}), print_stat('Execute file with append');
@@ -76,15 +78,12 @@ ok length decode('utf8', $out) == 551294, 'Check output length';
 ok $obj->execute_file($tt_file, \$out, {append => ';fest["top.xml"]( JSON.parse(__dataFetch()) );', json => $json}), print_stat('Execute file with append and json again');
 ok length decode('utf8', $out) == 551294, 'Check output length again';
 
-ok $obj->execute_file($tt_file, \$out, {run => 'fest["top.xml"]( JSON.parse(__dataFetch()) )', json => $json}), print_stat('Execute file with run and json');
-ok length decode('utf8', $out) == 551294, 'Check output length';
-
-ok $obj->execute_file($tt_file, \$out, {run => 'fest["top.xml"]( JSON.parse(__dataFetch()) )', json => $json}), print_stat('Execute file with run and json again');
+ok $obj->execute_file($tt_file, \$out, {append => ';fest["top.xml"]( JSON.parse(__dataFetch()) )', json => $json}), print_stat('Execute file with run and json again');
 ok length decode('utf8', $out) == 551294, 'Check output length again';
 ok $obj->counters->{run_idle_notification_loop_time} > 0, 'Check not empty gc time';
 
-ok $obj->execute_file($tt_file, \$out, {run => 'fest["top.xml"]( JSON.parse(__dataFetch()) )', json => $json}), print_stat('Execute file with run and json again');
-ok length decode('utf8', $out) == 551294, 'Check output length again';
+#ok $obj->execute_file($tt_file, \$out, {run => 'fest["top.xml"]( JSON.parse(__dataFetch()) )', json => $json}), print_stat('Execute file with run and json again');
+#ok length decode('utf8', $out) == 551294, 'Check output length again';
 
 $obj->execute_file($zero_file, \$out);
 ok length $out == 11, 'Check \0 embeded symbol';
@@ -92,16 +91,9 @@ ok length $out == 11, 'Check \0 embeded symbol';
 my $warn_true;
 eval {
 	local $SIG{__WARN__} = sub {$warn_true = $_[0] =~ m{^Error opening file /tmp/nonexistent.js: No such file or directory}};
-	$obj->execute_file("/tmp/nonexistent.js", \$out, {run => 'fest["top.xml"]( JSON.parse(__dataFetch()) )', json => $json});
+	$obj->execute_file("/tmp/nonexistent.js", \$out, {append => ';fest["top.xml"]( JSON.parse(__dataFetch()) )', json => $json});
 };
 ok $warn_true, "Catch warn message";
-
-undef $warn_true;
-eval {
-	local $SIG{__WARN__} = sub {$warn_true = $_[0] =~ m{^123 at}};
-	$obj->execute_file($tt_file, \$out, {run => '__errorLog("123");'});;
-};
-ok $warn_true, "Catch warn message from __errorLog";
 
 printf "\nRESULT:\n%d requests, TOTAL:%.06f sec, EXEC:%.06f sec, COMPILE:%.06f sec, RLMN:%.06f sec, RINL:%.06f sec, H_LIMIT:%d MB, H_TOTAL:%d MB, H_USED:%d MB, H_PHYS:%d MB, H_EXEC:%d MB\n",
 	$sum_stat->{request_num},
