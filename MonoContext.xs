@@ -159,12 +159,15 @@ mono_execute_file(pMono, fname, out, ...)
 		bool res = ExecuteFile(pMono, _fname, _append, &_json, &_out);
 		std::vector<std::string> _err = GetErrors();
 
-		for (unsigned i=0; i < _err.size(); i++) {
-			warn (_err.at(i).c_str());
-		}
-
 		if (res) {
+			for (unsigned i=0; i < _err.size(); i++) {
+				warn (_err.at(i).c_str());
+			}
+
 			sv_setpvn(SvRV(out), _out.c_str(), _out.length());
+		}
+		else {
+			die (_err.at(0).c_str());
 		}
 
 		RETVAL = res;
@@ -186,8 +189,13 @@ mono_load_file(pMono, fname)
 
 		std::vector<std::string> _err = GetErrors();
 
-		for (unsigned i=0; i < _err.size(); i++) {
-			warn (_err.at(i).c_str());
+		if (res) {
+			for (unsigned i=0; i < _err.size(); i++) {
+				warn (_err.at(i).c_str());
+			}
+		}
+		else {
+			die (_err.at(0).c_str());
 		}
 
 		RETVAL = res;

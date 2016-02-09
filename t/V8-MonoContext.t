@@ -5,8 +5,10 @@ use ExtUtils::testlib;
 use FindBin;
 use Encode qw/decode/;
 use Data::Dumper;
+use File::Temp;
+use IO::Handle;
 
-use Test::More tests => 18;
+use Test::More tests => 19;
 BEGIN { use_ok('V8::MonoContext') };
 
 my $out;
@@ -88,12 +90,23 @@ ok $obj->counters->{run_idle_notification_loop_time} > 0, 'Check not empty gc ti
 $obj->execute_file($zero_file, \$out);
 ok length $out == 11, 'Check \0 embeded symbol';
 
-my $warn_true;
+my $die_true;
 eval {
-	local $SIG{__WARN__} = sub {$warn_true = $_[0] =~ m{^Error opening file /tmp/nonexistent.js: No such file or directory}};
+	local $SIG{__DIE__} = sub {$die_true = $_[0] =~ m{^Error opening file /tmp/nonexistent.js: No such file or directory}};
 	$obj->execute_file("/tmp/nonexistent.js", \$out, {append => ';fest["top.xml"]( JSON.parse(__dataFetch()) )', json => $json});
 };
-ok $warn_true, "Catch warn message";
+ok $die_true, "Catch die message";
+
+my $tmp = File::Temp->new(UNLINK => 1);
+print $tmp "throw new Error('division by zero')";
+$tmp->autoflush(1);
+
+undef $die_true;
+eval {
+	local $SIG{__DIE__} = sub {$die_true = $_[0] =~ m{division by zero}};
+	$obj->load_file($tmp->filename);
+};
+ok $die_true, "Catch die message";
 
 printf "\nRESULT:\n%d requests, TOTAL:%.06f sec, EXEC:%.06f sec, COMPILE:%.06f sec, RLMN:%.06f sec, RINL:%.06f sec, H_LIMIT:%d MB, H_TOTAL:%d MB, H_USED:%d MB, H_PHYS:%d MB, H_EXEC:%d MB\n",
 	$sum_stat->{request_num},
