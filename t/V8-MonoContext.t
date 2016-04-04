@@ -87,7 +87,7 @@ ok $obj->counters->{run_idle_notification_loop_time} > 0, 'Check not empty gc ti
 #ok $obj->execute_file($tt_file, \$out, {run => 'fest["top.xml"]( JSON.parse(__dataFetch()) )', json => $json}), print_stat('Execute file with run and json again');
 #ok length decode('utf8', $out) == 551294, 'Check output length again';
 
-$obj->execute_file($zero_file, \$out);
+$obj->execute_file($zero_file, \$out, {append => 'aaa'});
 ok length $out == 11, 'Check \0 embeded symbol';
 
 my $die_true;
