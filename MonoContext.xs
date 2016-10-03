@@ -204,6 +204,33 @@ mono_load_file(pMono, fname)
 
 
 bool
+mono_load_config(pMono, fname)
+		MonoContext * pMono
+		char* fname
+	INIT:
+
+	CODE:
+		std::string _fname(fname);
+
+		bool res = LoadConfig(pMono, _fname);
+
+		std::vector<std::string> _err = GetErrors();
+
+		if (res) {
+			for (unsigned i=0; i < _err.size(); i++) {
+				warn (_err.at(i).c_str());
+			}
+		}
+		else {
+			die (_err.at(0).c_str());
+		}
+
+		RETVAL = res;
+	OUTPUT:
+		RETVAL
+
+
+bool
 mono_idle_notification(pMono, ms)
 		MonoContext * pMono
 		int ms

@@ -8,14 +8,17 @@ use Data::Dumper;
 use File::Temp;
 use IO::Handle;
 
-use Test::More tests => 19;
+use Test::More tests => 18;
 BEGIN { use_ok('V8::MonoContext') };
 
 my $out;
 my $json;
-my $json_file	= "$FindBin::Bin/../t_data/json";
-my $tt_file		= "$FindBin::Bin/../t_data/js";
-my $zero_file	= "$FindBin::Bin/../t_data/zero_embed";
+my $json_file			= "$FindBin::Bin/../t_data/json";
+my $json_cfg_file		= "$FindBin::Bin/../t_data/json_config";
+my $zero_div_file		= "$FindBin::Bin/../t_data/zero_division";
+my $empty_file	= "$FindBin::Bin/../t_data/empty";
+my $tt_file				= "$FindBin::Bin/../t_data/js";
+my $zero_file			= "$FindBin::Bin/../t_data/zero_embed";
 
 open FH, $json_file or die;
 	{local $\ = undef; $json = <FH>};
@@ -65,6 +68,10 @@ sub print_stat {
 ok $obj->load_file($tt_file), print_stat('Load file');
 ok !$obj->counters->{run_low_memory_notification_time}, 'Check empty gc time';
 
+ok $obj->load_config($json_cfg_file), print_stat('Loaded config');
+$obj->execute_file($empty_file, \$out, {append => ';this.config.buildCatalog.abc'});
+is $out, 'def', print_stat('Check loaded config');
+
 ok $obj->execute_file($tt_file, \$out), print_stat('Execute file with no append not json');
 ok !$out, 'Check empty output';
 
@@ -80,10 +87,6 @@ ok length decode('utf8', $out) == 551294, 'Check output length';
 ok $obj->execute_file($tt_file, \$out, {append => ';fest["top.xml"]( JSON.parse(__dataFetch()) );', json => $json}), print_stat('Execute file with append and json again');
 ok length decode('utf8', $out) == 551294, 'Check output length again';
 
-ok $obj->execute_file($tt_file, \$out, {append => ';fest["top.xml"]( JSON.parse(__dataFetch()) )', json => $json}), print_stat('Execute file with run and json again');
-ok length decode('utf8', $out) == 551294, 'Check output length again';
-ok $obj->counters->{run_idle_notification_loop_time} > 0, 'Check not empty gc time';
-
 #ok $obj->execute_file($tt_file, \$out, {run => 'fest["top.xml"]( JSON.parse(__dataFetch()) )', json => $json}), print_stat('Execute file with run and json again');
 #ok length decode('utf8', $out) == 551294, 'Check output length again';
 
@@ -97,16 +100,13 @@ eval {
 };
 ok $die_true, "Catch die message";
 
-my $tmp = File::Temp->new(UNLINK => 1);
-print $tmp "throw new Error('division by zero')";
-$tmp->autoflush(1);
-
 undef $die_true;
 eval {
 	local $SIG{__DIE__} = sub {$die_true = $_[0] =~ m{division by zero}};
-	$obj->load_file($tmp->filename);
+	$obj->load_file($zero_div_file);
 };
 ok $die_true, "Catch die message";
+
 
 printf "\nRESULT:\n%d requests, TOTAL:%.06f sec, EXEC:%.06f sec, COMPILE:%.06f sec, RLMN:%.06f sec, RINL:%.06f sec, H_LIMIT:%d MB, H_TOTAL:%d MB, H_USED:%d MB, H_PHYS:%d MB, H_EXEC:%d MB\n",
 	$sum_stat->{request_num},
